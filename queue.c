@@ -48,8 +48,8 @@ bool q_insert_head(queue_t *q, char *s)
 {
     list_ele_t *newh;
     char *news;
-    newh = malloc(sizeof(newh));
-    news = malloc(sizeof(news));
+    newh = malloc(sizeof(list_ele_t));
+    news = malloc(sizeof(char));
     if (!q || !newh || !news) {
         return false;
     }
@@ -81,8 +81,8 @@ bool q_insert_tail(queue_t *q, char *s)
 {
     list_ele_t *newt;
     char *news;
-    newt = malloc(sizeof(newt));
-    news = malloc(sizeof(news));
+    newt = malloc(sizeof(list_ele_t));
+    news = malloc(sizeof(char));
     if (!q || !newt || !news) {
         return false;
     }
@@ -148,8 +148,27 @@ int q_size(queue_t *q)
  */
 void q_reverse(queue_t *q)
 {
-    /* TODO: You need to write the code for this function */
-    /* TODO: Remove the above comment when you are about to implement. */
+    if (!q) {
+        return;
+    }
+    list_ele_t *nodearr[q->size];
+    list_ele_t *stptr = q->head;
+    for (int i = 0; i < q->size; i++) {
+        nodearr[i] = stptr;
+        stptr = stptr->next;
+    }
+    /*Put all nodes in an array*/
+    for (int i = q->size - 1; i >= 0; i--) {
+        if (nodearr[i - 1] != NULL) {
+            list_ele_t *p = nodearr[i];
+            p->next = nodearr[i - 1];
+        }
+        if (i == 0) {
+            nodearr[0]->next = NULL;
+        }
+    }
+    q->tail = nodearr[0];
+    q->head = nodearr[q->size - 1];
 }
 
 /*
@@ -157,8 +176,10 @@ void q_reverse(queue_t *q)
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
  */
+
+/*Using Merge sort in order to achieve O(nlgn) complexity*/
+
 void q_sort(queue_t *q)
 {
-    /* TODO: You need to write the code for this function */
-    /* TODO: Remove the above comment when you are about to implement. */
+    // ttt
 }
