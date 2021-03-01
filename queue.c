@@ -54,7 +54,7 @@ bool q_insert_head(queue_t *q, char *s)
         return false;
     }
     newh->value = malloc((strlen(s) + 1) * sizeof(char));
-    if (!new->value) {
+    if (!newh->value) {
         free(newh);
         return false;
     }
