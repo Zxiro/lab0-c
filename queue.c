@@ -27,10 +27,11 @@ void q_free(queue_t *q)
     if (!q) {
         return;
     }
-    list_ele_t *pre = q->head;
-    while (pre != NULL) { /*Check whether the quene become NULL*/
-        list_ele_t *fr = pre;
-        pre = pre->next; /*point to the next node to be freed*/
+    list_ele_t *fr;
+    while (q->head) { /*Check whether the quene become NULL*/
+        fr = q->head;
+        q->head = fr->next; /*point to the next node to be freed*/
+        free(fr->value);
         free(fr);
     }
     /* Free queue structure */
@@ -47,17 +48,20 @@ void q_free(queue_t *q)
 bool q_insert_head(queue_t *q, char *s)
 {
     list_ele_t *newh;
-    char *news;
     newh = malloc(sizeof(list_ele_t));
-    news = malloc(sizeof(char));
-    if (!q || !newh || !news) {
+    if (!q || !newh) {
+        free(newh);
+        return false;
+    }
+    newh->value = malloc((strlen(s) + 1) * sizeof(char));
+    if (!new->value) {
+        free(newh);
         return false;
     }
     /* Don't forget to allocate space for the string and copy it */
     /* What if either call to malloc returns NULL? */
-    memcpy(news, s, strlen(s) + 1);
+    memcpy(newh->value, s, strlen(s) + 1);
     /*Copy the value of s from the addr of s to news*/
-    newh->value = news;
     if (q->tail == NULL) {
         newh->next = q->head;
         q->tail = newh;
@@ -82,7 +86,7 @@ bool q_insert_tail(queue_t *q, char *s)
     list_ele_t *newt;
     char *news;
     newt = malloc(sizeof(list_ele_t));
-    news = malloc(sizeof(char));
+    news = (char *) malloc((strlen(s) + 1) * sizeof(char));
     if (!q || !newt || !news) {
         return false;
     }
@@ -179,7 +183,56 @@ void q_reverse(queue_t *q)
 
 /*Using Merge sort in order to achieve O(nlgn) complexity*/
 
+list_ele_t *merge(list_ele_t *l, list_ele_t *r)
+{
+    /*Check whether need to merge*/
+    if (!r) {
+        return l;
+    }
+    if (!l) {
+        return r;
+    }
+    /*Recursive, Check whether next node needed to be merged*/
+    if (l->value < r->value) {
+        l->next = merge(l->next, r);
+        return l;
+    } else {
+        r->next = merge(r->next, l);
+        return r;
+    }
+}
+
+list_ele_t *mergeSort(list_ele_t *head)
+{
+    /*Check the ptr*/
+    if (!head || !head->next) {
+        return head;
+    }
+    /*Assign two ptr to travesal the queue*/
+    list_ele_t *fast = head->next;
+    list_ele_t *slow = head;
+    /*Use ptr-fast in order to go through the queue
+     * and find the cut point of the queue*/
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    /*After the while iteration arrive the cutting point*/
+    fast = slow->next;
+    slow->next = NULL;
+    list_ele_t *l_merged = mergeSort(head);
+    list_ele_t *r_merged = mergeSort(fast);
+
+    return merge(l_merged, r_merged);
+}
+
 void q_sort(queue_t *q)
 {
-    // ttt
+    if (!q || !q->head) {
+        return;
+    }
+    q->head = mergeSort(q->head);
+    while (q->tail->next) {
+        q->tail = q->tail->next;
+    }
 }
