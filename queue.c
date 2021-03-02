@@ -81,13 +81,16 @@ bool q_insert_head(queue_t *q, char *s)
  */
 bool q_insert_tail(queue_t *q, char *s)
 {
+    if (!q) {
+        return false;
+    }
     list_ele_t *newt;
     newt = malloc(sizeof(list_ele_t));
-    if (!q || !newt) {
+    if (!newt) {
         free(newt);
         return false;
     }
-    newt->value = malloc((strlen(s) + 1) * sizeof(char));
+    newt->value = malloc((strlen(s) + 1) * sizeof(char *));
     if (!newt->value) {
         free(newt);
         return false;
@@ -95,12 +98,11 @@ bool q_insert_tail(queue_t *q, char *s)
     /* Remember: It should operate in O(1) time */
     memcpy(newt->value, s, strlen(s) + 1);
     /*Copy the value of s from the addr of s to news*/
+    newt->next = NULL;
     if (q->tail == NULL) {
-        newt->next = NULL;
         q->head = newt;
         q->tail = newt;
     } else {
-        newt->next = NULL;
         q->tail->next = newt;
         q->tail = newt;
     }
@@ -195,16 +197,36 @@ list_ele_t *merge(list_ele_t *l, list_ele_t *r)
     if (!l) {
         return r;
     }
+    list_ele_t *head = NULL;
+    list_ele_t *tmp = NULL;
     /*Recursive, Check whether next node needed to be merged*/
     if (strcasecmp(l->value, r->value) < 0) {
         /*Based on qtest.c line 563 limitation*/
-        l->next = merge(l->next, r);
-        return l;
+        head = l;
+        l = l->next;
     } else {
-        r->next = merge(r->next, l);
-        return r;
+        head = r;
+        r = r->next;
     }
+    tmp = head;
+    while (l && r) {
+        if (strcasecmp(l->value, r->value) < 0) {
+            tmp->next = l;
+            l = l->next;
+
+        } else {
+            tmp->next = r;
+            r = r->next;
+        }
+        tmp = tmp->next;
+    }
+    if (l)
+        tmp->next = l;
+    if (r)
+        tmp->next = r;
+    return head;
 }
+
 
 list_ele_t *mergeSort(list_ele_t *head)
 {
@@ -222,10 +244,10 @@ list_ele_t *mergeSort(list_ele_t *head)
         fast = fast->next->next;
     }
     /*After the while iteration arrive the cutting point*/
-    fast = slow->next;
+    list_ele_t *mid = slow->next;
     slow->next = NULL;
     list_ele_t *l_merged = mergeSort(head);
-    list_ele_t *r_merged = mergeSort(fast);
+    list_ele_t *r_merged = mergeSort(mid);
     return merge(l_merged, r_merged);
 }
 
