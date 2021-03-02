@@ -55,6 +55,7 @@ bool q_insert_head(queue_t *q, char *s)
     }
     newh->value = malloc((strlen(s) + 1) * sizeof(char));
     if (!newh->value) {
+        free(newh->value);
         free(newh);
         return false;
     }
@@ -62,14 +63,11 @@ bool q_insert_head(queue_t *q, char *s)
     /* What if either call to malloc returns NULL? */
     memcpy(newh->value, s, strlen(s) + 1);
     /*Copy the value of s from the addr of s to news*/
+    newh->next = q->head;
+    q->head = newh;
     if (q->tail == NULL) {
-        newh->next = q->head;
         q->tail = newh;
     }
-    if (q->tail != NULL) {
-        newh->next = q->head;
-    }
-    q->head = newh;
     q->size += 1;
     return true;
 }
@@ -84,24 +82,28 @@ bool q_insert_head(queue_t *q, char *s)
 bool q_insert_tail(queue_t *q, char *s)
 {
     list_ele_t *newt;
-    char *news;
     newt = malloc(sizeof(list_ele_t));
-    news = (char *) malloc((strlen(s) + 1) * sizeof(char));
-    if (!q || !newt || !news) {
+    if (!q || !newt) {
+        free(newt);
+        return false;
+    }
+    newt->value = malloc((strlen(s) + 1) * sizeof(char));
+    if (!newt->value) {
+        free(newt);
         return false;
     }
     /* Remember: It should operate in O(1) time */
-    memcpy(news, s, strlen(s) + 1);
+    memcpy(newt->value, s, strlen(s) + 1);
     /*Copy the value of s from the addr of s to news*/
-    newt->value = news;
     if (q->tail == NULL) {
+        newt->next = NULL;
         q->head = newt;
-    }
-    if (q->tail != NULL) {
+        q->tail = newt;
+    } else {
+        newt->next = NULL;
         q->tail->next = newt;
+        q->tail = newt;
     }
-    q->tail = newt;
-    newt->next = NULL;
     q->size += 1;
     return true;
 }
@@ -116,17 +118,24 @@ bool q_insert_tail(queue_t *q, char *s)
  */
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
-    if (!q || !q->head) {
-        return false;
+    if (!q || !q->head || !sp) {
+        return false; /*Need to notice about all NULL suitation!*/
     }
-    list_ele_t *frptr = q->head; /*Assign an node to be removed*/
-    if (sp) {                    /*If the value != NULL*/
-        memcpy(sp, frptr->value, bufsize);
+    list_ele_t *frptr = q->head;          /*Assign an node to be removed*/
+    if (bufsize > strlen(frptr->value)) { /*If the value != NULL*/
+        memcpy(sp, frptr->value, strlen(frptr->value));
+        sp[strlen(frptr->value)] = '\0'; /*Terminator*/
+    } else {
+        memcpy(sp, frptr->value, bufsize - 1);
         sp[bufsize - 1] = '\0';
     }
-    q->size -= 1;
-    q->head = q->head->next;
+    q->head = frptr->next;
+    free(frptr->value);
     free(frptr);
+    q->size -= 1;
+    if (q->size == 0) {
+        q->tail = NULL;
+    }
     return true;
 }
 
@@ -152,27 +161,21 @@ int q_size(queue_t *q)
  */
 void q_reverse(queue_t *q)
 {
-    if (!q) {
+    if (!q || !q->head || q->size <= 1) {
         return;
     }
-    list_ele_t *nodearr[q->size];
-    list_ele_t *stptr = q->head;
-    for (int i = 0; i < q->size; i++) {
-        nodearr[i] = stptr;
-        stptr = stptr->next;
+    list_ele_t *tmp = q->head->next;
+    q->tail->next = q->head;
+    while (tmp != q->tail) {
+        q->head->next = tmp->next;
+        tmp->next = q->tail->next;
+        q->tail->next = tmp;
+        tmp = q->head->next;
     }
-    /*Put all nodes in an array*/
-    for (int i = q->size - 1; i >= 0; i--) {
-        if (nodearr[i - 1] != NULL) {
-            list_ele_t *p = nodearr[i];
-            p->next = nodearr[i - 1];
-        }
-        if (i == 0) {
-            nodearr[0]->next = NULL;
-        }
-    }
-    q->tail = nodearr[0];
-    q->head = nodearr[q->size - 1];
+    q->tail = q->head;
+    q->tail->next = NULL;
+    q->head = tmp;
+    return;
 }
 
 /*
@@ -193,7 +196,8 @@ list_ele_t *merge(list_ele_t *l, list_ele_t *r)
         return r;
     }
     /*Recursive, Check whether next node needed to be merged*/
-    if (l->value < r->value) {
+    if (strcasecmp(l->value, r->value) < 0) {
+        /*Based on qtest.c line 563 limitation*/
         l->next = merge(l->next, r);
         return l;
     } else {
@@ -222,13 +226,12 @@ list_ele_t *mergeSort(list_ele_t *head)
     slow->next = NULL;
     list_ele_t *l_merged = mergeSort(head);
     list_ele_t *r_merged = mergeSort(fast);
-
     return merge(l_merged, r_merged);
 }
 
 void q_sort(queue_t *q)
 {
-    if (!q || !q->head) {
+    if (!q || !q->head || !q->head->next) {
         return;
     }
     q->head = mergeSort(q->head);
