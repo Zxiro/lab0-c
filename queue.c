@@ -213,7 +213,6 @@ list_ele_t *merge(list_ele_t *l, list_ele_t *r)
         if (strcasecmp(l->value, r->value) < 0) {
             tmp->next = l;
             l = l->next;
-
         } else {
             tmp->next = r;
             r = r->next;
@@ -226,7 +225,6 @@ list_ele_t *merge(list_ele_t *l, list_ele_t *r)
         tmp->next = r;
     return head;
 }
-
 
 list_ele_t *mergeSort(list_ele_t *head)
 {
